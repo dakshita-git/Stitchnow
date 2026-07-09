@@ -30,29 +30,34 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    wishlist: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Boutique",
+  },
+],
+
     role: {
       type: String,
       enum: ["customer", "boutiqueOwner", "tailor", "admin"],
       default: "customer",
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Hash password before saving a new user
 userSchema.pre("save", async function () {
-  // Do not hash password again when another field is updated
-  if (!this.isModified("password")) {
-    return;
-  }
+  if (!this.isModified("password")) return;
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Compare entered password during login
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

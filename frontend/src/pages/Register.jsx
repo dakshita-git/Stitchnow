@@ -1,5 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Phone,
+  Scissors,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
@@ -14,6 +25,7 @@ export default function Register() {
     role: "customer",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +35,13 @@ export default function Register() {
     setForm((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const setRole = (role) => {
+    setForm((prev) => ({
+      ...prev,
+      role,
     }));
   };
 
@@ -50,84 +69,148 @@ export default function Register() {
   };
 
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <h1>Create your StitchNow account</h1>
-        <p>Join as a customer or list your boutique business.</p>
+    <main className="auth-page register-page">
+      <section className="auth-left">
+        <div className="auth-badge">
+          <Sparkles size={16} />
+          Join StitchNow
+        </div>
 
-        {error && <p className="error-message">{error}</p>}
+        <h1>
+          Create your
+          <span> fashion-service </span>
+          account.
+        </h1>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label>
-            Full Name
+        <p>
+          Join as a customer to book trusted boutiques, or register as a
+          boutique owner to manage services, orders, payments, and customer
+          chats from one smart dashboard.
+        </p>
+
+        <div className="auth-features">
+          <div>
+            <Scissors size={18} />
+            Urgent Stitching
+          </div>
+
+          <div>
+            <Building2 size={18} />
+            Boutique Dashboard
+          </div>
+
+          <div>
+            <Lock size={18} />
+            Secure Razorpay
+          </div>
+        </div>
+      </section>
+
+      <section className="auth-card register-card">
+        <h2>Create Account</h2>
+        <p>Choose your role and start using StitchNow.</p>
+
+        {error && <div className="auth-error">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="input-group">
+            <User size={18} />
             <input
               type="text"
               name="name"
-              placeholder="Enter your full name"
+              placeholder="Full Name"
               value={form.name}
               onChange={handleChange}
               required
             />
-          </label>
+          </div>
 
-          <label>
-            Email Address
+          <div className="input-group">
+            <Mail size={18} />
             <input
               type="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder="Email Address"
               value={form.email}
               onChange={handleChange}
               required
             />
-          </label>
+          </div>
 
-          <label>
-            Phone Number
+          <div className="input-group">
+            <Phone size={18} />
             <input
               type="tel"
               name="phone"
-              placeholder="Enter your phone number"
+              placeholder="Phone Number"
               value={form.phone}
               onChange={handleChange}
               required
             />
-          </label>
+          </div>
 
-          <label>
-            Password
+          <div className="input-group">
+            <Lock size={18} />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
-              placeholder="Minimum 6 characters"
+              placeholder="Password, minimum 6 characters"
               value={form.password}
               onChange={handleChange}
               minLength="6"
               required
             />
-          </label>
 
-          <label>
-            I want to join as
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              required
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((prev) => !prev)}
             >
-              <option value="customer">Customer</option>
-              <option value="boutiqueOwner">Boutique Owner</option>
-            </select>
-          </label>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Creating account..." : "Create Account"}
+          <div className="role-selector">
+            <p>I want to join as</p>
+
+            <div className="role-grid">
+              <button
+                type="button"
+                className={
+                  form.role === "customer" ? "role-card active" : "role-card"
+                }
+                onClick={() => setRole("customer")}
+              >
+                <User size={22} />
+                <strong>Customer</strong>
+                <span>Book tailoring services</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  form.role === "boutiqueOwner"
+                    ? "role-card active"
+                    : "role-card"
+                }
+                onClick={() => setRole("boutiqueOwner")}
+              >
+                <Building2 size={22} />
+                <strong>Boutique Owner</strong>
+                <span>List and manage services</span>
+              </button>
+            </div>
+          </div>
+
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
+        <div className="auth-footer">
+          Already have an account?
+          <Link to="/login">Login</Link>
+        </div>
       </section>
     </main>
   );

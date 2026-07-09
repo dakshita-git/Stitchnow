@@ -14,6 +14,10 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import "./style.css";
 import AddBoutique from "./pages/AddBoutique.jsx";
 import AddReview from "./pages/AddReview.jsx";
+import Chat from "./pages/Chat.jsx";
+import PaymentSuccess from "./pages/PaymentSuccess.jsx";
+import Profile from "./pages/Profile.jsx";
+import Wishlist from "./pages/Wishlist.jsx";
 
 createRoot(document.getElementById("root")).render(
   <AuthProvider>
@@ -30,6 +34,10 @@ createRoot(document.getElementById("root")).render(
           <Route path="dashboard" element={<BoutiqueDashboard />} />
           <Route path="add-boutique" element={<AddBoutique />} />
           <Route path="review/:boutiqueId" element={<AddReview />} />
+          <Route path="chat/:bookingId" element={<Chat />} />
+          <Route path="payment-success" element={<PaymentSuccess />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="wishlist" element={<Wishlist />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 import {
   CalendarDays,
   CheckCircle2,
   Circle,
   Clock3,
   CreditCard,
+  Download,
   IndianRupee,
   MapPin,
+  MessageCircle,
   PackageCheck,
   Star,
 } from "lucide-react";
@@ -27,6 +30,8 @@ const statuses = [
 ];
 
 export default function Orders() {
+  const navigate = useNavigate();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [payingOrderId, setPayingOrderId] = useState("");
@@ -69,6 +74,88 @@ export default function Orders() {
     });
   };
 
+  const downloadInvoice = (order) => {
+    const doc = new jsPDF();
+
+    const amount = order.amount || order.service?.price || 0;
+    const orderId = order._id.slice(-8).toUpperCase();
+
+    doc.setFontSize(22);
+    doc.setTextColor(124, 58, 237);
+    doc.text("StitchNow", 20, 20);
+
+    doc.setFontSize(12);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Smart Tailoring Booking Platform", 20, 28);
+
+    doc.setDrawColor(124, 58, 237);
+    doc.line(20, 35, 190, 35);
+
+    doc.setFontSize(18);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Invoice", 20, 50);
+
+    doc.setFontSize(11);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Invoice ID: INV-${orderId}`, 20, 62);
+    doc.text(`Order ID: ${orderId}`, 20, 70);
+    doc.text(`Invoice Date: ${new Date().toLocaleDateString()}`, 20, 78);
+
+    doc.setFontSize(14);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Boutique Details", 20, 95);
+
+    doc.setFontSize(11);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Name: ${order.boutique?.name || "N/A"}`, 20, 105);
+    doc.text(`City: ${order.boutique?.city || "N/A"}`, 20, 113);
+
+    doc.setFontSize(14);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Service Details", 20, 132);
+
+    doc.setFontSize(11);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Service: ${order.service?.name || "Tailoring Service"}`, 20, 142);
+    doc.text(`Booking Date: ${order.bookingDate || "Not selected"}`, 20, 150);
+    doc.text(`Time Slot: ${order.timeSlot || "Not selected"}`, 20, 158);
+    doc.text(`Status: ${order.status}`, 20, 166);
+    doc.text(`Payment Status: ${order.paymentStatus || "pending"}`, 20, 174);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 188, 190, 188);
+
+    doc.setFontSize(14);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Payment Summary", 20, 202);
+
+    doc.setFontSize(12);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Service Amount", 20, 215);
+    doc.text(`Rs. ${amount}`, 160, 215);
+
+    doc.text("Platform Fee", 20, 225);
+    doc.text("Rs. 0", 160, 225);
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 235, 190, 235);
+
+    doc.setFontSize(15);
+    doc.setTextColor(17, 24, 39);
+    doc.text("Total Amount", 20, 248);
+    doc.text(`Rs. ${amount}`, 160, 248);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      "Thank you for using StitchNow. This is a computer-generated invoice.",
+      20,
+      275,
+    );
+
+    doc.save(`StitchNow-Invoice-${orderId}.pdf`);
+  };
+
   const handlePayment = async (order) => {
     try {
       setError("");
@@ -93,6 +180,7 @@ export default function Orders() {
         name: "StitchNow",
         description: order.service?.name || "Tailoring Service",
         order_id: data.orderId,
+
         handler: async function (response) {
           try {
             await api.post("/payments/verify", {
@@ -102,8 +190,7 @@ export default function Orders() {
               razorpay_signature: response.razorpay_signature,
             });
 
-            setMessage("Payment successful. Your order is marked as paid.");
-            await loadOrders();
+            navigate("/payment-success");
           } catch (err) {
             setError(
               err.response?.data?.message ||
@@ -111,9 +198,11 @@ export default function Orders() {
             );
           }
         },
+
         prefill: {
           name: "StitchNow Customer",
         },
+
         theme: {
           color: "#7c3aed",
         },
@@ -317,22 +406,48 @@ export default function Orders() {
                   </div>
                 )}
 
-                {isDelivered && order.boutique?._id && (
-                  <div className="review-action-box">
-                    <div>
-                      <h3>How was your experience?</h3>
-                      <p>
-                        Your review helps other customers choose trusted
-                        boutiques.
-                      </p>
-                    </div>
-
-                    <Link className="btn" to={`/review/${order.boutique._id}`}>
-                      <Star size={17} />
-                      Add Review
+                <div className="order-actions">
+                  {!isCancelled && (
+                    <Link
+                      className="btn secondary-btn"
+                      to={`/chat/${order._id}`}
+                    >
+                      <MessageCircle size={17} />
+                      Chat with Boutique
                     </Link>
-                  </div>
-                )}
+                  )}
+
+                  {isPaid && (
+                    <button
+                      type="button"
+                      className="btn invoice-btn"
+                      onClick={() => downloadInvoice(order)}
+                    >
+                      <Download size={17} />
+                      Download Invoice
+                    </button>
+                  )}
+
+                  {isDelivered && order.boutique?._id && (
+                    <div className="review-action-box">
+                      <div>
+                        <h3>How was your experience?</h3>
+                        <p>
+                          Your review helps other customers choose trusted
+                          boutiques.
+                        </p>
+                      </div>
+
+                      <Link
+                        className="btn"
+                        to={`/review/${order.boutique._id}`}
+                      >
+                        <Star size={17} />
+                        Add Review
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </article>
             );
           })}

@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const bookingStatuses = [
   "Order Placed",
@@ -64,7 +76,6 @@ export default function BoutiqueDashboard() {
       setLoadingBoutiques(true);
 
       const { data } = await api.get("/boutiques/owner/my-boutiques");
-
       setMyBoutiques(data);
 
       if (data.length > 0) {
@@ -97,7 +108,6 @@ export default function BoutiqueDashboard() {
       setLoadingBookings(true);
 
       const { data } = await api.get(`/bookings/boutique/${boutiqueId}`);
-
       setBookings(data);
     } catch (err) {
       setError(
@@ -154,9 +164,7 @@ export default function BoutiqueDashboard() {
   const handleBoutiqueImageChange = (event) => {
     const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file.");
@@ -188,9 +196,7 @@ export default function BoutiqueDashboard() {
   };
 
   const uploadBoutiqueImage = async () => {
-    if (!boutiqueImageFile) {
-      return "";
-    }
+    if (!boutiqueImageFile) return "";
 
     const formData = new FormData();
     formData.append("image", boutiqueImageFile);
@@ -364,6 +370,43 @@ export default function BoutiqueDashboard() {
   const selectedBoutique = myBoutiques.find(
     (item) => item._id === selectedBoutiqueId,
   );
+  const totalRevenue = bookings
+    .filter((b) => b.paymentStatus === "paid")
+    .reduce((sum, b) => sum + (b.amount || 0), 0);
+
+  const pendingOrders = bookings.filter(
+    (b) => b.status !== "Delivered" && b.status !== "Cancelled",
+  ).length;
+
+  const completedOrders = bookings.filter(
+    (b) => b.status === "Delivered",
+  ).length;
+
+  const chartData = [
+    {
+      name: "Revenue",
+      value: totalRevenue,
+    },
+    {
+      name: "Orders",
+      value: bookings.length,
+    },
+    {
+      name: "Completed",
+      value: completedOrders,
+    },
+  ];
+
+  const pieData = [
+    {
+      name: "Pending",
+      value: pendingOrders,
+    },
+    {
+      name: "Completed",
+      value: completedOrders,
+    },
+  ];
 
   return (
     <main className="page-container">
@@ -374,6 +417,57 @@ export default function BoutiqueDashboard() {
           Add your boutique, list services, upload boutique photos, and manage
           customer orders from one place.
         </p>
+      </section>
+      <section className="analytics-grid">
+        <div className="analytics-card">
+          <h4>Total Revenue</h4>
+          <h2>₹{totalRevenue}</h2>
+        </div>
+
+        <div className="analytics-card">
+          <h4>Total Orders</h4>
+          <h2>{bookings.length}</h2>
+        </div>
+
+        <div className="analytics-card">
+          <h4>Pending Orders</h4>
+          <h2>{pendingOrders}</h2>
+        </div>
+
+        <div className="analytics-card">
+          <h4>Completed Orders</h4>
+          <h2>{completedOrders}</h2>
+        </div>
+      </section>
+
+      <section className="charts-grid">
+        <div className="chart-card">
+          <h3>Business Overview</h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card">
+          <h3>Order Status</h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" outerRadius={90} label>
+                <Cell fill="#7c3aed" />
+                <Cell fill="#22c55e" />
+              </Pie>
+
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </section>
 
       {message && <p className="success-message">{message}</p>}
@@ -726,22 +820,31 @@ export default function BoutiqueDashboard() {
                   </div>
                 )}
 
-                <label className="status-update-control">
-                  Update Order Status
-                  <select
-                    value={booking.status}
-                    disabled={updatingBookingId === booking._id}
-                    onChange={(event) =>
-                      updateBookingStatus(booking._id, event.target.value)
-                    }
+                <div className="booking-actions">
+                  <Link
+                    className="btn secondary-btn"
+                    to={`/chat/${booking._id}`}
                   >
-                    {bookingStatuses.map((status) => (
-                      <option value={status} key={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    💬 Chat with Customer
+                  </Link>
+
+                  <label className="status-update-control">
+                    Update Order Status
+                    <select
+                      value={booking.status}
+                      disabled={updatingBookingId === booking._id}
+                      onChange={(event) =>
+                        updateBookingStatus(booking._id, event.target.value)
+                      }
+                    >
+                      {bookingStatuses.map((status) => (
+                        <option value={status} key={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </article>
             ))}
           </div>
